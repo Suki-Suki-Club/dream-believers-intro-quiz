@@ -12,3 +12,4 @@ seed.sql
 tracks.yaml
 
 .omc/
+.superpowers/
