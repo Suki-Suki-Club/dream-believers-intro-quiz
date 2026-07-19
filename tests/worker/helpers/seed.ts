@@ -5,6 +5,7 @@ const SEGMENT_COUNT = 3;
 
 export async function seedGameData(): Promise<void> {
   const statements = [];
+  const mediaWrites: Promise<unknown>[] = [];
 
   for (let trackId = 1; trackId <= TRACK_COUNT; trackId += 1) {
     statements.push(
@@ -26,8 +27,16 @@ export async function seedGameData(): Promise<void> {
            VALUES (?1, ?2, ?3)`,
         ).bind(trackId, index, `seed-track-${trackId}-segment-${index}`),
       );
+
+      mediaWrites.push(
+        env.MEDIA.put(
+          `seed-track-${trackId}-segment-${index}`,
+          new Uint8Array([0x44, 0x42, 0x53, trackId, index]),
+        ),
+      );
     }
   }
 
   await env.DB.batch(statements);
+  await Promise.all(mediaWrites);
 }

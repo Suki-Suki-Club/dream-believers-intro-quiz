@@ -34,6 +34,10 @@ interface TrackRow {
   seg_count: number;
 }
 
+interface SegmentRow {
+  r2_key: string;
+}
+
 interface SessionRow {
   id: string;
   started_at: number;
@@ -73,6 +77,21 @@ export async function getTrack(
     clipMs: row.clip_ms,
     segCount: row.seg_count,
   };
+}
+
+export async function getSegmentKey(
+  db: D1Database,
+  trackId: number,
+  idx: number,
+): Promise<string | null> {
+  const row = await db
+    .prepare(
+      'SELECT r2_key FROM segments WHERE track_id = ?1 AND idx = ?2',
+    )
+    .bind(trackId, idx)
+    .first<SegmentRow>();
+
+  return row?.r2_key ?? null;
 }
 
 export async function insertSession(
