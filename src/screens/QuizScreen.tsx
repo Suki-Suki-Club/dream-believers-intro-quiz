@@ -1,14 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Button } from '@suki-suki-club/link-like-ui/System/Button';
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
-} from '@suki-suki-club/link-like-ui/System/Card';
 import type { AnswerResponse, Question } from '../api/types';
 import type { SegmentPlayer } from '../audio/segmentPlayer';
 import { ChoiceGrid } from '../components/ChoiceGrid';
+import { PlayDial } from '../components/PlayDial';
 import { SeekBar } from '../components/SeekBar';
 
 export interface QuizScreenProps {
@@ -47,6 +41,7 @@ export function QuizScreen({
   error = null,
 }: QuizScreenProps) {
   const [feedback, setFeedback] = useState<'wrong' | 'correct' | null>(null);
+  const [penaltyPopKey, setPenaltyPopKey] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [positionMs, setPositionMs] = useState(0);
   const [fetchedMs, setFetchedMs] = useState(0);
@@ -74,13 +69,21 @@ export function QuizScreen({
     return () => window.clearTimeout(timer);
   }, [feedback]);
 
+  const showPenaltyPop = () => setPenaltyPopKey((key) => key + 1);
+
   const handleAnswer = async (choiceIndex: number) => {
     const response = await onAnswer(choiceIndex);
     if (response?.correct === false) {
       setFeedback('wrong');
+      showPenaltyPop();
     } else if (response?.correct) {
       setFeedback('correct');
     }
+  };
+
+  const handleSkip = async () => {
+    const skipped = await onSkip();
+    if (skipped !== false) showPenaltyPop();
   };
 
   const handlePlayPause = async () => {
@@ -101,92 +104,79 @@ export function QuizScreen({
   };
 
   const choices = question?.choices ?? [];
-  const questionLabel = `問題 ${Math.min(questionIndex + 1, totalQuestions)} / ${totalQuestions}`;
+  const questionNumber = Math.min(questionIndex + 1, totalQuestions);
 
   return (
-    <section
-      aria-labelledby="quiz-title"
-      className={`screen quiz-screen ${feedback === 'wrong' ? 'is-wrong shake' : ''} ${feedback === 'correct' ? 'is-correct' : ''}`.trim()}
-      data-feedback={feedback ?? undefined}
-    >
-      <Card className="quiz-card">
-        <CardHeader className="quiz-card__header">
-          <div className="quiz-card__topline">
-            <span className="screen__eyebrow">INTRO QUIZ</span>
-            <span aria-label="問題番号" className="question-count">
-              {questionLabel}
+    <>
+      <header className="hud">
+        <span
+          aria-label={`問題 ${questionNumber} / ${totalQuestions}`}
+          className="hud__q"
+        >
+          Q{String(questionNumber).padStart(2, '0')}
+          <small> /{totalQuestions}</small>
+        </span>
+        <span aria-label="経過タイム" className="hud__timer">
+          {formatTime(elapsedMs)}
+          {penaltyPopKey > 0 ? (
+            <span aria-hidden="true" className="penalty-pop" key={penaltyPopKey}>
+              +5s
             </span>
-          </div>
-          <CardTitle className="quiz-card__title" id="quiz-title">
-            曲を聴いて答えよう
-          </CardTitle>
-        </CardHeader>
-        <CardBody>
-          <div className="audio-player" aria-label="音声プレイヤー">
-            <div className="audio-player__controls">
-              <Button
-                aria-label={isPlaying ? '一時停止' : '再生'}
-                className="play-button"
-                disabled={!player || fetchedMs === 0}
-                onClick={() => void handlePlayPause()}
-                type="button"
-              >
-                {isPlaying ? '一時停止' : '再生'}
-              </Button>
-              <span className="audio-player__hint">
-                取得済みの範囲だけシークできます
-              </span>
-            </div>
-            <SeekBar
-              fetchedMs={fetchedMs}
-              onSeek={handleSeek}
-              player={player}
-              positionMs={positionMs}
-            />
-          </div>
-
-          <div aria-live="polite" className="quiz-stats">
-            <div className="quiz-stat quiz-stat--primary">
-              <span>経過タイム</span>
-              <strong>{formatTime(elapsedMs)}</strong>
-            </div>
-            <div className="quiz-stat">
-              <span>誤答</span>
-              <strong>{wrongCount}回</strong>
-            </div>
-            <div className="quiz-stat">
-              <span>先送り</span>
-              <strong>{skipCount}回</strong>
-            </div>
-          </div>
-
-          {error ? (
-            <p aria-live="assertive" className="form-message form-message--error">
-              {error.message || '通信に失敗しました。もう一度お試しください。'}
-            </p>
           ) : null}
+        </span>
+      </header>
+      <p aria-live="polite" className="hud__penalty">
+        <span>
+          誤答 <b>{wrongCount}</b>
+        </span>
+        <span>
+          先送り <b>{skipCount}</b>
+        </span>
+      </p>
 
-          <ChoiceGrid
-            choices={choices}
-            disabled={isSubmitting || choices.length === 0}
-            onChoice={(choiceIndex) => void handleAnswer(choiceIndex)}
-          />
+      <section
+        aria-label={`問題 ${questionNumber}`}
+        className={`screen quiz-screen ${feedback === 'wrong' ? 'shake' : ''}`.trim()}
+        data-feedback={feedback ?? undefined}
+      >
+        <PlayDial
+          disabled={!player || fetchedMs === 0}
+          fetchedMs={fetchedMs}
+          isPlaying={isPlaying}
+          onToggle={() => void handlePlayPause()}
+          positionMs={positionMs}
+        />
 
-          <div className="quiz-card__footer">
-            <p className="penalty-note">誤答・先送りごとに +5秒</p>
-            <Button
-              className="skip-button"
-              disabled={isSubmitting}
-              onClick={() => void onSkip()}
-              type="button"
-              variant="secondary"
-            >
-              先送り
-            </Button>
-          </div>
-        </CardBody>
-      </Card>
-    </section>
+        <SeekBar
+          fetchedMs={fetchedMs}
+          onSeek={handleSeek}
+          player={player}
+          positionMs={positionMs}
+        />
+
+        {error ? (
+          <p aria-live="assertive" className="form-message form-message--error">
+            {error.message || '通信に失敗しました。もう一度お試しください。'}
+          </p>
+        ) : null}
+
+        <ChoiceGrid
+          choices={choices}
+          disabled={isSubmitting || choices.length === 0}
+          onChoice={(choiceIndex) => void handleAnswer(choiceIndex)}
+          wrongFlash={feedback === 'wrong'}
+        />
+
+        <button
+          className="skip-button"
+          disabled={isSubmitting}
+          onClick={() => void handleSkip()}
+          type="button"
+        >
+          +5秒払って先を聴く
+        </button>
+      </section>
+    </>
   );
 }
 

@@ -5,6 +5,8 @@ describe('App', () => {
   it('renders the quiz title', () => {
     render(<App />);
 
-    expect(screen.getByText('Dream Believers イントロクイズ')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /Dream\s*Believers/i }),
+    ).toBeInTheDocument();
   });
 });

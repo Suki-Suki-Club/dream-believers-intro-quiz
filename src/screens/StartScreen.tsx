@@ -1,12 +1,3 @@
-import { Button } from '@suki-suki-club/link-like-ui/System/Button';
-import {
-  Card,
-  CardBody,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@suki-suki-club/link-like-ui/System/Card';
-
 export interface StartScreenProps {
   onStart: () => void | Promise<void>;
   onShowRanking?: () => void;
@@ -22,56 +13,60 @@ export function StartScreen({
 }: StartScreenProps) {
   return (
     <section aria-labelledby="start-title" className="screen start-screen">
-      <div className="screen__eyebrow">DREAM BELIEVERS</div>
-      <Card className="start-card">
-        <CardHeader className="start-card__header">
-          <CardTitle className="start-card__title" id="start-title">
-            Dream Believers イントロクイズ
-          </CardTitle>
-          <CardDescription>
-            音の記憶を頼りに、10問のイントロを駆け抜けよう。
-          </CardDescription>
-        </CardHeader>
-        <CardBody>
-          <div className="rules" aria-label="ゲームルール">
-            <h2>ルール</h2>
-            <ul>
-              <li>全10問、6つの候補から曲を選びます。</li>
-              <li>全問正解までの時間が短いほど上位になります。</li>
-              <li>誤答と先送りには、それぞれ5秒のペナルティが加算されます。</li>
-            </ul>
-          </div>
+      <h1 className="wordmark" id="start-title">
+        Dream
+        <br />
+        Believers
+        <span className="wordmark--sub">イントロクイズ</span>
+      </h1>
 
-          {error ? (
-            <p aria-live="assertive" className="form-message form-message--error">
-              {error.message || 'ゲームを開始できませんでした。'}
-            </p>
-          ) : null}
+      <p className="start-tagline">
+        ぜんぶ同じ曲。ぜんぶ違う。
+        <br />
+        イントロだけで聴き分けろ。
+      </p>
 
-          <div className="start-card__actions">
-            <Button
-              aria-busy={isStarting}
-              className="start-button"
-              disabled={isStarting}
-              onClick={() => void onStart()}
-              size="lg"
-              type="button"
-            >
-              {isStarting ? '準備中…' : 'ゲームをスタート'}
-            </Button>
-            {onShowRanking ? (
-              <Button
-                className="ranking-link"
-                onClick={onShowRanking}
-                type="button"
-                variant="secondary"
-              >
-                ランキングを見る
-              </Button>
-            ) : null}
-          </div>
-        </CardBody>
-      </Card>
+      <ul aria-label="ゲームルール" className="start-rules">
+        <li>
+          <span aria-hidden="true" className="rule-dot" />
+          <b>全10問・6択</b>、全問正解までのタイムを競う
+        </li>
+        <li>
+          <span aria-hidden="true" className="rule-dot rule-dot--red" />
+          誤答と先送りは<b>+5秒</b>
+        </li>
+        <li>
+          <span aria-hidden="true" className="rule-dot rule-dot--gold" />
+          タイムは<b>全国ランキング</b>へ
+        </li>
+      </ul>
+
+      {error ? (
+        <p aria-live="assertive" className="form-message form-message--error">
+          {error.message || 'ゲームを開始できませんでした。'}
+        </p>
+      ) : null}
+
+      <div className="start-actions">
+        <button
+          aria-busy={isStarting}
+          className="btn btn--cta"
+          disabled={isStarting}
+          onClick={() => void onStart()}
+          type="button"
+        >
+          {isStarting ? '準備中…' : 'スタート'}
+        </button>
+        {onShowRanking ? (
+          <button
+            className="btn btn--ghost"
+            onClick={onShowRanking}
+            type="button"
+          >
+            ランキングを見る
+          </button>
+        ) : null}
+      </div>
     </section>
   );
 }

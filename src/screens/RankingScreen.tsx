@@ -1,11 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Button } from '@suki-suki-club/link-like-ui/System/Button';
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
-} from '@suki-suki-club/link-like-ui/System/Card';
 import type { RankingEntry } from '../api/types';
 import { getRanking } from '../api/client';
 
@@ -23,6 +16,12 @@ function formatRankingTime(milliseconds: number): string {
   const millis = safeMilliseconds % 1_000;
   return `${minutes}:${String(seconds).padStart(2, '0')}.${String(millis).padStart(3, '0')}`;
 }
+
+const MEDAL_CLASSES: Record<number, string> = {
+  1: 'ranking-row--first',
+  2: 'ranking-row--second',
+  3: 'ranking-row--third',
+};
 
 export function RankingScreen({
   entries: providedEntries,
@@ -64,61 +63,64 @@ export function RankingScreen({
 
   return (
     <section aria-labelledby="ranking-title" className="screen ranking-screen">
-      <Card className="ranking-card">
-        <CardHeader className="ranking-card__header">
-          <div className="screen__eyebrow">LEADERBOARD</div>
-          <CardTitle id="ranking-title">
-            ランキング
-          </CardTitle>
-          <p className="ranking-card__subtitle">上位50名</p>
-        </CardHeader>
-        <CardBody>
-          {isLoading ? <p className="loading-message">ランキングを読み込み中…</p> : null}
-          {error ? (
-            <p aria-live="assertive" className="form-message form-message--error">
-              {error.message || 'ランキングを読み込めませんでした。'}
-            </p>
-          ) : null}
-          {!isLoading && !error && entries.length === 0 ? (
-            <p className="empty-message">まだランキングに登録されていません。</p>
-          ) : null}
-          {entries.length > 0 ? (
-            <ol aria-label="ランキング順位" className="ranking-list">
-              {entries.map((entry, index) => {
-                const rank = index + 1;
-                const isHighlighted =
-                  (highlightedRank !== null && rank === highlightedRank) ||
-                  (highlightName !== null && entry.name === highlightName);
-                return (
-                  <li
-                    className={`ranking-list__item ${isHighlighted ? 'ranking-highlight' : ''}`.trim()}
-                    data-rank={rank}
-                    key={`${entry.createdAt}-${entry.name}-${rank}`}
-                  >
-                    <span aria-label={`${rank}位`} className="ranking-list__rank">
-                      {rank}
-                    </span>
-                    <span className="ranking-list__name">{entry.name}</span>
-                    <strong className="ranking-list__time">
-                      {formatRankingTime(entry.timeMs)}
-                    </strong>
-                  </li>
-                );
-              })}
-            </ol>
-          ) : null}
-          {onBack ? (
-            <Button
-              className="ranking-back"
-              onClick={onBack}
-              type="button"
-              variant="secondary"
-            >
-              戻る
-            </Button>
-          ) : null}
-        </CardBody>
-      </Card>
+      <h1 className="ranking-title" id="ranking-title">
+        ランキング
+      </h1>
+
+      {isLoading ? (
+        <p className="ranking-loading">ランキングを読み込み中…</p>
+      ) : null}
+      {error ? (
+        <p aria-live="assertive" className="form-message form-message--error">
+          {error.message || 'ランキングを読み込めませんでした。'}
+        </p>
+      ) : null}
+      {!isLoading && !error && entries.length === 0 ? (
+        <p className="ranking-empty">
+          まだ記録がない。最初の完走者になろう。
+        </p>
+      ) : null}
+
+      {entries.length > 0 ? (
+        <ol aria-label="ランキング順位" className="ranking-list">
+          {entries.map((entry, index) => {
+            const rank = index + 1;
+            const isHighlighted =
+              (highlightedRank !== null && rank === highlightedRank) ||
+              (highlightName !== null && entry.name === highlightName);
+            const rowClass = [
+              'ranking-row',
+              MEDAL_CLASSES[rank] ?? '',
+              isHighlighted ? 'ranking-highlight' : '',
+            ]
+              .filter(Boolean)
+              .join(' ');
+            return (
+              <li
+                className={rowClass}
+                data-rank={rank}
+                key={`${entry.createdAt}-${entry.name}-${rank}`}
+              >
+                <span aria-label={`${rank}位`} className="ranking-row__rank">
+                  {rank}
+                </span>
+                <span className="ranking-row__name">{entry.name}</span>
+                <strong className="ranking-row__time">
+                  {formatRankingTime(entry.timeMs)}
+                </strong>
+              </li>
+            );
+          })}
+        </ol>
+      ) : null}
+
+      <div className="ranking-actions">
+        {onBack ? (
+          <button className="btn btn--ghost" onClick={onBack} type="button">
+            戻る
+          </button>
+        ) : null}
+      </div>
     </section>
   );
 }

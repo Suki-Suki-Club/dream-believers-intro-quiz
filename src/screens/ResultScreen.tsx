@@ -1,12 +1,3 @@
-import { FormInputField } from '@suki-suki-club/link-like-ui/System/Form';
-import { Button } from '@suki-suki-club/link-like-ui/System/Button';
-import {
-  Card,
-  CardBody,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@suki-suki-club/link-like-ui/System/Card';
 import { useState } from 'react';
 import { postRanking } from '../api/client';
 
@@ -62,88 +53,82 @@ export function ResultScreen({
 
   return (
     <section aria-labelledby="result-title" className="screen result-screen">
-      <Card className="result-card">
-        <CardHeader>
-          <div className="screen__eyebrow">FINISH</div>
-          <CardTitle id="result-title">
-            クリアおめでとう！
-          </CardTitle>
-          <CardDescription>あなたの結果</CardDescription>
-        </CardHeader>
-        <CardBody>
-          <div aria-label="確定タイム" className="result-time">
-            <span>確定タイム</span>
-            <strong>{formatResultTime(scoreMs)}</strong>
+      <p className="eyebrow" id="result-title">
+        Finish
+      </p>
+
+      <div aria-label="確定タイム" className="final-time">
+        <span className="final-time__label">確定タイム</span>
+        <strong className="final-time__value">
+          {formatResultTime(scoreMs)}
+        </strong>
+      </div>
+
+      <dl aria-label="タイムの内訳" className="breakdown">
+        <div>
+          <dt>実時間</dt>
+          <dd>{formatResultTime(baseMs)}</dd>
+        </div>
+        <div className="is-penalty">
+          <dt>誤答ペナルティ（{wrongCount}回）</dt>
+          <dd>+{wrongCount * 5}秒</dd>
+        </div>
+        <div className="is-penalty">
+          <dt>先送りペナルティ（{skipCount}回）</dt>
+          <dd>+{skipCount * 5}秒</dd>
+        </div>
+      </dl>
+
+      {rank !== null ? (
+        <div aria-live="polite" className="rank-result">
+          <span>ランキング登録完了</span>
+          <strong>{rank}位</strong>
+        </div>
+      ) : (
+        <form className="ranking-form" onSubmit={handleSubmit}>
+          <div className="field">
+            <label className="field__label" htmlFor="ranking-name">
+              ランキングに表示する名前
+            </label>
+            <input
+              aria-label="ランキングに表示する名前"
+              autoComplete="nickname"
+              className="field__input"
+              id="ranking-name"
+              maxLength={20}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="なまえ"
+              value={name}
+            />
           </div>
+          {error ? (
+            <p aria-live="assertive" className="form-message form-message--error">
+              {error.message || 'ランキングに登録できませんでした。'}
+            </p>
+          ) : null}
+          <button
+            className="btn btn--cta"
+            disabled={!sessionId || !name.trim() || isSubmitting}
+            type="submit"
+          >
+            {isSubmitting ? '登録中…' : 'ランキングに登録'}
+          </button>
+        </form>
+      )}
 
-          <dl aria-label="タイムの内訳" className="result-breakdown">
-            <div>
-              <dt>実時間</dt>
-              <dd>{formatResultTime(baseMs)}</dd>
-            </div>
-            <div>
-              <dt>誤答ペナルティ</dt>
-              <dd>+{wrongCount * 5}秒（{wrongCount}回）</dd>
-            </div>
-            <div>
-              <dt>先送りペナルティ</dt>
-              <dd>+{skipCount * 5}秒（{skipCount}回）</dd>
-            </div>
-          </dl>
-
-          {rank !== null ? (
-            <div aria-live="polite" className="rank-result">
-              <span>ランキング登録完了</span>
-              <strong>{rank}位</strong>
-            </div>
-          ) : (
-            <form className="ranking-form" onSubmit={handleSubmit}>
-              <FormInputField
-                aria-label="ランキングに表示する名前"
-                autoComplete="nickname"
-                label="ランキングに表示する名前"
-                maxLength={20}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="なまえ"
-                value={name}
-              />
-              {error ? (
-                <p aria-live="assertive" className="form-message form-message--error">
-                  {error.message || 'ランキングに登録できませんでした。'}
-                </p>
-              ) : null}
-              <Button
-                className="ranking-submit"
-                disabled={!sessionId || !name.trim() || isSubmitting}
-                type="submit"
-              >
-                {isSubmitting ? '登録中…' : 'ランキングに登録'}
-              </Button>
-            </form>
-          )}
-
-          <div className="result-card__actions">
-            {rank !== null && onShowRanking ? (
-              <Button
-                onClick={() => onShowRanking(rank, name.trim())}
-                type="button"
-                variant="gradient"
-              >
-                ランキングを見る
-              </Button>
-            ) : null}
-            {rank === null && onShowRanking ? (
-              <Button
-                onClick={() => onShowRanking()}
-                type="button"
-                variant="secondary"
-              >
-                ランキングを見る
-              </Button>
-            ) : null}
-          </div>
-        </CardBody>
-      </Card>
+      <div className="result-actions">
+        {onShowRanking ? (
+          <button
+            className="btn btn--ghost"
+            onClick={() =>
+              rank !== null ? onShowRanking(rank, name.trim()) : onShowRanking()
+            }
+            type="button"
+          >
+            ランキングを見る
+          </button>
+        ) : null}
+      </div>
     </section>
   );
 }

@@ -61,9 +61,11 @@ describe('game screens', () => {
 
     render(<StartScreen onStart={onStart} />);
 
-    expect(screen.getByText('Dream Believers イントロクイズ')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /Believers/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/全10問/)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /ゲームをスタート/ }));
+    await user.click(screen.getByRole('button', { name: 'スタート' }));
 
     expect(onStart).toHaveBeenCalledOnce();
   });
