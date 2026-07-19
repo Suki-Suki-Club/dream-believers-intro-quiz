@@ -1,28 +1,36 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------- tokens */
+/*
+  Dream Believers 4月Ver.のジャケット(桜吹雪と青空、白基調の衣装)を
+  そのままアプリの気候にする。link-like-ui のブランド色をそのまま採用:
+  pink #ff86c8 / red #ef296a / system-left #65defc / system-right #938aff
+*/
 
 :root {
-  /* 暗転のライブ会場 — 真っ黒ではなく青い闇 */
-  --c-hall: #131832;
-  --c-panel: #1e2547;
-  --c-panel-edge: #2b3462;
-  --c-text: #f4f7ff;
-  --c-text-dim: #9aa3c7;
-  --c-sky: #7ed3ff;   /* 蓮空色: 再生・取得範囲・フォーカス */
-  --c-gold: #ffc85c;  /* 落陽金: タイマー・上位 */
-  --c-red: #ff5d7e;   /* 紅: ペナルティ・誤答 */
-  --grad-dawn: linear-gradient(115deg, #7ed3ff 0%, #a9c4ff 52%, #ffb7d2 100%);
+  --c-bg: #fff8fb;
+  --c-bg-sky: #eaf6ff;
+  --c-panel: #ffffff;
+  --c-panel-edge: #ffdcec;
+  --c-text: #3d2b3a;
+  --c-text-dim: #9c8a97;
+  --c-pink: #ff86c8;
+  --c-pink-deep: #ef296a;
+  --c-sky: #65defc;
+  --c-lavender: #938aff;
+  --grad-sakura: linear-gradient(120deg, #65defc 0%, #c9aef8 48%, #ff86c8 100%);
+  --c-gold: #e8a94c;
 
-  --font-hud: "Chakra Petch", "Helvetica Neue", sans-serif;
+  --font-mark: "Cormorant Garamond", "Hiragino Mincho ProN", serif;
+  --font-hud: "Quicksand", "Hiragino Kaku Gothic ProN", sans-serif;
   --font-body: "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI",
     system-ui, sans-serif;
 
-  --radius-panel: 20px;
-  --radius-control: 14px;
+  --radius-panel: 22px;
+  --radius-control: 16px;
 
   color: var(--c-text);
-  background: var(--c-hall);
+  background: var(--c-bg);
   font-family: var(--font-body);
   font-synthesis: none;
   line-height: 1.6;
@@ -31,27 +39,19 @@
 }
 
 @font-face {
-  font-family: "Chakra Petch";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/fonts/chakra-petch-500.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Chakra Petch";
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url("/fonts/chakra-petch-700.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Chakra Petch";
+  font-family: "Cormorant Garamond";
   font-style: italic;
-  font-weight: 700;
+  font-weight: 500 700;
   font-display: swap;
-  src: url("/fonts/chakra-petch-i700.woff2") format("woff2");
+  src: url("/fonts/cormorant-garamond-italic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Quicksand";
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url("/fonts/quicksand.woff2") format("woff2");
 }
 
 /* ---------------------------------------------------------------- stage */
@@ -60,9 +60,10 @@ body {
   min-width: 320px;
   margin: 0;
   background:
-    radial-gradient(60rem 40rem at 50% -18rem, rgb(126 211 255 / 9%), transparent 65%),
-    radial-gradient(44rem 30rem at 85% 110%, rgb(255 183 210 / 7%), transparent 70%),
-    var(--c-hall);
+    radial-gradient(52rem 34rem at 12% -12rem, rgb(101 222 252 / 20%), transparent 62%),
+    radial-gradient(58rem 40rem at 92% 8%, rgb(255 134 200 / 16%), transparent 60%),
+    radial-gradient(40rem 30rem at 50% 115%, rgb(201 174 248 / 16%), transparent 65%),
+    var(--c-bg);
   background-attachment: fixed;
 }
 
@@ -76,7 +77,7 @@ input {
 }
 
 :focus-visible {
-  outline: 2px solid var(--c-sky);
+  outline: 2px solid var(--c-pink-deep);
   outline-offset: 2px;
 }
 
@@ -89,7 +90,6 @@ input {
   white-space: nowrap;
 }
 
-/* スマホ縦 = 基準。アプリの1カラムをそのままPCでも中央に置く */
 .app-shell {
   display: flex;
   flex-direction: column;
@@ -106,44 +106,84 @@ input {
 /* ------------------------------------------------------------ wordmark */
 
 .wordmark {
+  position: relative;
   margin: 0;
-  font-family: var(--font-hud);
+  font-family: var(--font-mark);
   font-style: italic;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.01em;
-  line-height: 1.02;
-  font-size: clamp(2.5rem, 12vw, 3.6rem);
-  text-transform: uppercase;
-  background: var(--grad-dawn);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  line-height: 1.06;
+  font-size: clamp(2.7rem, 13vw, 3.9rem);
+  color: var(--c-pink-deep);
 }
 
 .wordmark--sub {
   display: block;
-  font-size: 0.36em;
-  letter-spacing: 0.42em;
-  margin-top: 0.5em;
-  color: var(--c-text-dim);
-  background: none;
-  -webkit-background-clip: initial;
-  background-clip: initial;
+  font-family: var(--font-body);
   font-style: normal;
-  font-weight: 500;
+  font-weight: 700;
+  font-size: 0.32em;
+  letter-spacing: 0.4em;
+  margin-top: 0.6em;
+  color: var(--c-text-dim);
+}
+
+/* 実ジャケットの D/Believers 前にある細い二重線飾りへのオマージュ */
+.wordmark__mark::before {
+  content: "";
+  display: inline-block;
+  width: 0.09em;
+  height: 0.8em;
+  margin-right: 0.14em;
+  border-left: 2px solid var(--c-sky);
+  border-right: 2px solid var(--c-sky);
+  vertical-align: -0.05em;
 }
 
 /* ---------------------------------------------------------------- start */
 
 .start-screen {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2rem;
+  gap: 1.9rem;
   flex: 1;
   padding-top: 3rem;
   padding-bottom: 3rem;
   text-align: center;
+  overflow: hidden;
+}
+
+.petals {
+  position: absolute;
+  inset: -2rem -1rem auto -1rem;
+  height: 22rem;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.petal {
+  position: absolute;
+  top: -3rem;
+  font-size: 1.4rem;
+  color: var(--c-pink);
+  opacity: 0.65;
+  animation: petal-fall 9s linear infinite;
+}
+
+@keyframes petal-fall {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translateY(26rem) translateX(2.4rem) rotate(220deg);
+    opacity: 0;
+  }
 }
 
 .start-tagline {
@@ -172,7 +212,7 @@ input {
 
 .start-rules b {
   color: var(--c-text);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .rule-dot {
@@ -184,7 +224,7 @@ input {
 }
 
 .rule-dot--red {
-  background: var(--c-red);
+  background: var(--c-pink-deep);
 }
 
 .rule-dot--gold {
@@ -229,20 +269,20 @@ input {
   max-width: 20rem;
   min-height: 56px;
   font-size: 1.06rem;
-  color: #10142a;
-  background: var(--grad-dawn);
-  box-shadow: 0 6px 26px rgb(126 211 255 / 28%);
+  color: #fff;
+  background: var(--grad-sakura);
+  box-shadow: 0 10px 26px rgb(255 134 200 / 35%);
 }
 
 .btn--ghost {
-  background: transparent;
+  background: var(--c-panel);
   color: var(--c-text-dim);
   border: 1px solid var(--c-panel-edge);
 }
 
 .btn--ghost:not(:disabled):hover {
-  color: var(--c-text);
-  border-color: var(--c-sky);
+  color: var(--c-pink-deep);
+  border-color: var(--c-pink);
 }
 
 /* ------------------------------------------------------------------ hud */
@@ -256,14 +296,15 @@ input {
   justify-content: space-between;
   width: min(100%, 30rem);
   padding: calc(0.7rem + env(safe-area-inset-top)) 1.1rem 0.55rem;
-  background: linear-gradient(rgb(19 24 50 / 96%), rgb(19 24 50 / 88%) 70%, transparent);
+  background: linear-gradient(rgb(255 248 251 / 97%), rgb(255 248 251 / 90%) 70%, transparent);
   font-family: var(--font-hud);
 }
 
 .hud__q {
   font-weight: 700;
   font-size: 1.05rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
+  color: var(--c-text);
 }
 
 .hud__q small {
@@ -276,8 +317,8 @@ input {
   position: relative;
   font-weight: 700;
   font-size: 1.35rem;
-  letter-spacing: 0.03em;
-  color: var(--c-gold);
+  letter-spacing: 0.02em;
+  color: var(--c-pink-deep);
   font-variant-numeric: tabular-nums;
 }
 
@@ -295,7 +336,7 @@ input {
 }
 
 .hud__penalty b {
-  color: var(--c-red);
+  color: var(--c-pink-deep);
   font-weight: 700;
 }
 
@@ -306,7 +347,7 @@ input {
   top: -1.15em;
   font-size: 0.72em;
   font-weight: 700;
-  color: var(--c-red);
+  color: var(--c-pink-deep);
   pointer-events: none;
   animation: penalty-pop 900ms ease-out forwards;
 }
@@ -357,8 +398,8 @@ input {
   border-radius: 50%;
   cursor: pointer;
   background: var(--c-panel);
-  box-shadow: inset 0 0 0 1px var(--c-panel-edge), 0 4px 22px rgb(0 0 0 / 35%);
-  color: var(--c-sky);
+  box-shadow: inset 0 0 0 1px var(--c-panel-edge), 0 6px 22px rgb(255 134 200 / 22%);
+  color: var(--c-pink-deep);
   transition: transform 120ms ease;
   -webkit-tap-highlight-color: transparent;
 }
@@ -425,8 +466,8 @@ input {
   height: 18px;
   margin-top: -7px;
   border-radius: 50%;
-  background: var(--c-sky);
-  box-shadow: 0 0 10px rgb(126 211 255 / 55%);
+  background: var(--c-pink-deep);
+  box-shadow: 0 0 10px rgb(255 134 200 / 55%);
 }
 
 .scrub__input::-moz-range-track {
@@ -440,8 +481,8 @@ input {
   height: 18px;
   border: 0;
   border-radius: 50%;
-  background: var(--c-sky);
-  box-shadow: 0 0 10px rgb(126 211 255 / 55%);
+  background: var(--c-pink-deep);
+  box-shadow: 0 0 10px rgb(255 134 200 / 55%);
 }
 
 .scrub__hint {
@@ -488,13 +529,13 @@ input {
 
 .choice:not(:disabled):active {
   transform: scale(0.985);
-  border-color: var(--c-sky);
+  border-color: var(--c-pink);
 }
 
 @media (hover: hover) {
   .choice:not(:disabled):hover {
-    border-color: var(--c-sky);
-    background: #232b52;
+    border-color: var(--c-pink);
+    background: #fff0f7;
   }
 }
 
@@ -506,20 +547,20 @@ input {
   width: 1.7rem;
   height: 1.7rem;
   border-radius: 8px;
-  background: var(--c-hall);
-  color: var(--c-sky);
+  background: var(--grad-sakura);
+  color: #fff;
   font-family: var(--font-hud);
   font-size: 0.85rem;
   font-weight: 700;
 }
 
-/* 誤答フラッシュ: 画面ではなく選択肢列に紅を走らせる */
+/* 誤答フラッシュ: 選択肢列に紅を走らせる */
 .choices.is-wrong .choice {
   animation: choices-flash 500ms ease;
 }
 
 @keyframes choices-flash {
-  0% { border-color: var(--c-red); box-shadow: 0 0 14px rgb(255 93 126 / 30%); }
+  0% { border-color: var(--c-pink-deep); box-shadow: 0 0 14px rgb(239 41 106 / 22%); }
   100% { border-color: var(--c-panel-edge); box-shadow: none; }
 }
 
@@ -540,9 +581,9 @@ input {
   padding: 0 1.2rem;
   font-size: 0.88rem;
   font-weight: 600;
-  color: var(--c-red);
+  color: var(--c-pink-deep);
   background: transparent;
-  border: 1px dashed rgb(255 93 126 / 55%);
+  border: 1px dashed rgb(239 41 106 / 45%);
   border-radius: var(--radius-control);
   cursor: pointer;
   transition: background 120ms ease, opacity 120ms ease;
@@ -555,16 +596,16 @@ input {
 }
 
 .skip-button:not(:disabled):active {
-  background: rgb(255 93 126 / 12%);
+  background: rgb(239 41 106 / 10%);
 }
 
 .form-message--error {
   margin: 0;
   padding: 0.6rem 0.9rem;
   border-radius: var(--radius-control);
-  border: 1px solid rgb(255 93 126 / 45%);
-  background: rgb(255 93 126 / 10%);
-  color: #ffb3c2;
+  border: 1px solid rgb(239 41 106 / 35%);
+  background: rgb(239 41 106 / 8%);
+  color: var(--c-pink-deep);
   font-size: 0.85rem;
 }
 
@@ -606,7 +647,7 @@ input {
   font-weight: 700;
   font-size: clamp(2.6rem, 15vw, 3.4rem);
   line-height: 1.1;
-  color: var(--c-gold);
+  color: var(--c-pink-deep);
   font-variant-numeric: tabular-nums;
 }
 
@@ -643,7 +684,7 @@ input {
 }
 
 .breakdown .is-penalty dd {
-  color: var(--c-red);
+  color: var(--c-pink-deep);
 }
 
 .rank-result {
@@ -663,7 +704,7 @@ input {
 .rank-result strong {
   font-family: var(--font-hud);
   font-size: 2rem;
-  color: var(--c-gold);
+  color: var(--c-pink-deep);
 }
 
 .ranking-form {
@@ -688,16 +729,16 @@ input {
   padding: 0 1rem;
   border-radius: var(--radius-control);
   border: 1px solid var(--c-panel-edge);
-  background: var(--c-hall);
+  background: var(--c-panel);
   color: var(--c-text);
 }
 
 .field__input::placeholder {
-  color: #5c6489;
+  color: #c9b6c4;
 }
 
 .field__input:focus {
-  outline: 2px solid var(--c-sky);
+  outline: 2px solid var(--c-pink-deep);
   outline-offset: 0;
   border-color: transparent;
 }
@@ -750,8 +791,8 @@ input {
 }
 
 .ranking-row--first .ranking-row__rank { color: var(--c-gold); }
-.ranking-row--second .ranking-row__rank { color: #cfd8ee; }
-.ranking-row--third .ranking-row__rank { color: #e0a26e; }
+.ranking-row--second .ranking-row__rank { color: #a89bc4; }
+.ranking-row--third .ranking-row__rank { color: #e08a8a; }
 
 .ranking-row__name {
   flex: 1;
@@ -772,8 +813,8 @@ input {
 }
 
 .ranking-highlight {
-  border-color: var(--c-sky);
-  box-shadow: 0 0 16px rgb(126 211 255 / 22%);
+  border-color: var(--c-pink);
+  box-shadow: 0 0 16px rgb(255 134 200 / 25%);
 }
 
 .ranking-empty,
@@ -789,11 +830,16 @@ input {
 @media (prefers-reduced-motion: reduce) {
   .shake,
   .choices.is-wrong .choice,
-  .penalty-pop {
+  .penalty-pop,
+  .petal {
     animation: none;
   }
 
   .penalty-pop {
+    display: none;
+  }
+
+  .petals {
     display: none;
   }
 

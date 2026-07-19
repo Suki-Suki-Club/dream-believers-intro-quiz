@@ -5,6 +5,15 @@ export interface StartScreenProps {
   error?: Error | null;
 }
 
+const PETALS = [
+  { left: '6%', delay: '0s', duration: '8s', size: '1.1rem' },
+  { left: '22%', delay: '2.1s', duration: '10s', size: '0.9rem' },
+  { left: '42%', delay: '0.8s', duration: '9s', size: '1.3rem' },
+  { left: '64%', delay: '3.4s', duration: '8.5s', size: '1rem' },
+  { left: '80%', delay: '1.3s', duration: '11s', size: '1.15rem' },
+  { left: '92%', delay: '4s', duration: '9.5s', size: '0.85rem' },
+];
+
 export function StartScreen({
   onStart,
   onShowRanking,
@@ -13,10 +22,25 @@ export function StartScreen({
 }: StartScreenProps) {
   return (
     <section aria-labelledby="start-title" className="screen start-screen">
+      <div aria-hidden="true" className="petals">
+        {PETALS.map((petal, index) => (
+          <span
+            className="petal"
+            key={index}
+            style={{
+              left: petal.left,
+              animationDelay: petal.delay,
+              animationDuration: petal.duration,
+              fontSize: petal.size,
+            }}
+          >
+            ❁
+          </span>
+        ))}
+      </div>
+
       <h1 className="wordmark" id="start-title">
-        Dream
-        <br />
-        Believers
+        <span className="wordmark__mark">Dream</span> Believers
         <span className="wordmark--sub">イントロクイズ</span>
       </h1>
 

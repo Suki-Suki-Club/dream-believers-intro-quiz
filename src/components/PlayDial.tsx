@@ -33,9 +33,9 @@ export function PlayDial({
       <svg aria-hidden="true" viewBox="0 0 120 120">
         <defs>
           <linearGradient id="dial-dawn" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0%" stopColor="#7ed3ff" />
-            <stop offset="55%" stopColor="#a9c4ff" />
-            <stop offset="100%" stopColor="#ffb7d2" />
+            <stop offset="0%" stopColor="#65defc" />
+            <stop offset="48%" stopColor="#c9aef8" />
+            <stop offset="100%" stopColor="#ff86c8" />
           </linearGradient>
         </defs>
         <circle
