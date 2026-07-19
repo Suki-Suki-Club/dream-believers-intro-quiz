@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 import { canServeSegment } from '../domain/clockGate';
 import { drawQuestions } from '../domain/draw';
+import { applyAnswer, applySkip } from '../domain/session';
+import { computeFinalMs } from '../domain/timing';
 import {
   getAllTrackIds,
   getSegmentKey,
@@ -8,6 +10,7 @@ import {
   getTrack,
   insertSession,
   sweepExpiredSessions,
+  updateSessionState,
 } from '../db';
 import type { Env } from '../types';
 
@@ -116,6 +119,105 @@ gameRoutes.get('/api/game/:sid/q/:n/seg/:k', async (c) => {
       Expires: '0',
     },
   });
+});
+
+gameRoutes.post('/api/game/:sid/q/:n/answer', async (c) => {
+  const session = await getSession(c.env.DB, c.req.param('sid'));
+  if (!session) {
+    return c.json({ error: 'Session not found' }, 404);
+  }
+
+  const n = parseNonNegativeInteger(c.req.param('n'));
+  if (n === null) {
+    return c.json({ error: 'Invalid question number' }, 400);
+  }
+
+  if (session.finishedAt !== null || session.state.current !== n) {
+    return c.json({ error: 'Question is no longer current' }, 409);
+  }
+
+  const question = session.state.questions[n];
+  if (!question) {
+    return c.json({ error: 'Question not found' }, 404);
+  }
+
+  let payload: unknown;
+  try {
+    payload = await c.req.json<{ choice?: unknown }>();
+  } catch {
+    return c.json({ error: 'Invalid request body' }, 400);
+  }
+
+  const choice =
+    typeof payload === 'object' && payload !== null
+      ? (payload as { choice?: unknown }).choice
+      : undefined;
+  if (
+    typeof choice !== 'number' ||
+    !Number.isSafeInteger(choice) ||
+    choice < 0 ||
+    choice > 5
+  ) {
+    return c.json({ error: 'Choice must be an integer from 0 to 5' }, 400);
+  }
+
+  const now = Date.now();
+  const result = applyAnswer(
+    session.state,
+    n,
+    question.choices[choice],
+    question.trackId,
+    now,
+  );
+
+  if (!result.ok) {
+    if ('reason' in result) {
+      return c.json({ error: 'Question is no longer current' }, 409);
+    }
+
+    await updateSessionState(c.env.DB, session.id, result.state);
+    return c.json({ correct: false });
+  }
+
+  if (!result.finished) {
+    await updateSessionState(c.env.DB, session.id, result.state);
+    return c.json({ correct: true });
+  }
+
+  const finalMs = computeFinalMs(result.state, now);
+  await c.env.DB.prepare(
+    `UPDATE sessions
+     SET state = ?1, finished_at = ?2, final_ms = ?3
+     WHERE id = ?4`,
+  )
+    .bind(JSON.stringify(result.state), now, finalMs, session.id)
+    .run();
+
+  return c.json({ correct: true, finalMs });
+});
+
+gameRoutes.post('/api/game/:sid/q/:n/skip', async (c) => {
+  const session = await getSession(c.env.DB, c.req.param('sid'));
+  if (!session) {
+    return c.json({ error: 'Session not found' }, 404);
+  }
+
+  const n = parseNonNegativeInteger(c.req.param('n'));
+  if (n === null) {
+    return c.json({ error: 'Invalid question number' }, 400);
+  }
+
+  if (session.finishedAt !== null || session.state.current !== n) {
+    return c.json({ error: 'Question is no longer current' }, 409);
+  }
+
+  const result = applySkip(session.state, n, Date.now());
+  if (!result.ok) {
+    return c.json({ error: 'Question is no longer current' }, 409);
+  }
+
+  await updateSessionState(c.env.DB, session.id, result.state);
+  return new Response(null, { status: 204 });
 });
 
 async function canServeCurrentSegment(
