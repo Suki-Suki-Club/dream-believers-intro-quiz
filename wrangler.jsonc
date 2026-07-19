@@ -14,6 +14,19 @@
       "pattern": "intro-quiz.sukisuki.club",
       "custom_domain": true
     }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dream-believers-quiz",
+      "database_id": "PLACEHOLDER", // Replace with the production D1 database ID before deployment.
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "dream-believers-media"
+    }
   ]
-  // D1 and R2 bindings will be added in a subsequent task.
 }

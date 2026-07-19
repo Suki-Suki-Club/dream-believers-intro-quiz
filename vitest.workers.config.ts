@@ -9,6 +9,10 @@ export default defineWorkersConfig({
         wrangler: {
           configPath: './wrangler.jsonc',
         },
+        miniflare: {
+          d1Databases: ['DB'],
+          r2Buckets: ['MEDIA'],
+        },
       },
     },
   },
