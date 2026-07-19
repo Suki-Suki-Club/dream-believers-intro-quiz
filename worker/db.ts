@@ -27,6 +27,19 @@ export interface NewSession {
   createdAt: number;
 }
 
+export interface NewRanking {
+  sessionId: string;
+  name: string;
+  timeMs: number;
+  createdAt: number;
+}
+
+export interface RankingEntry {
+  name: string;
+  timeMs: number;
+  createdAt: number;
+}
+
 interface TrackRow {
   id: number;
   title: string;
@@ -45,6 +58,12 @@ interface SessionRow {
   finished_at: number | null;
   final_ms: number | null;
   ranked: number;
+  created_at: number;
+}
+
+interface RankingRow {
+  name: string;
+  time_ms: number;
   created_at: number;
 }
 
@@ -160,4 +179,54 @@ export async function sweepExpiredSessions(
     .run();
 
   return result.meta.changes;
+}
+
+export async function insertRanking(
+  db: D1Database,
+  row: NewRanking,
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO ranking (session_id, name, time_ms, created_at)
+       VALUES (?1, ?2, ?3, ?4)`,
+    )
+    .bind(row.sessionId, row.name, row.timeMs, row.createdAt)
+    .run();
+}
+
+export async function getRankingTop(
+  db: D1Database,
+): Promise<RankingEntry[]> {
+  const result = await db
+    .prepare(
+      `SELECT name, time_ms, created_at
+       FROM ranking
+       ORDER BY time_ms ASC, created_at ASC
+       LIMIT 50`,
+    )
+    .all<RankingRow>();
+
+  return result.results.map((row) => ({
+    name: row.name,
+    timeMs: row.time_ms,
+    createdAt: row.created_at,
+  }));
+}
+
+export async function getRankByTime(
+  db: D1Database,
+  timeMs: number,
+  createdAt: number,
+): Promise<number> {
+  const row = await db
+    .prepare(
+      `SELECT COUNT(*) AS count
+       FROM ranking
+       WHERE time_ms < ?1
+          OR (time_ms = ?1 AND created_at < ?2)`,
+    )
+    .bind(timeMs, createdAt)
+    .first<{ count: number }>();
+
+  return Number(row?.count ?? 0) + 1;
 }
