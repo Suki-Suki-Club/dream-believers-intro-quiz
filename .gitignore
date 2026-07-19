@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+
+# 音源・正解マッピングは絶対にコミットしない(PUBLIC リポ)
+scripts/
+seed.sql
+*.flac
+*.m4a
+*.wav
+tracks.yaml
+
+.omc/
