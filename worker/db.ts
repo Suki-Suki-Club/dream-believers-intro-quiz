@@ -8,6 +8,8 @@ export interface Track {
   title: string;
   clipMs: number;
   segCount: number;
+  artKey: string | null;
+  rewardKey: string | null;
 }
 
 export interface Session {
@@ -45,6 +47,8 @@ interface TrackRow {
   title: string;
   clip_ms: number;
   seg_count: number;
+  art_key: string | null;
+  reward_key: string | null;
 }
 
 interface SegmentRow {
@@ -81,7 +85,7 @@ export async function getTrack(
 ): Promise<Track | null> {
   const row = await db
     .prepare(
-      'SELECT id, title, clip_ms, seg_count FROM tracks WHERE id = ?1',
+      'SELECT id, title, clip_ms, seg_count, art_key, reward_key FROM tracks WHERE id = ?1',
     )
     .bind(id)
     .first<TrackRow>();
@@ -95,6 +99,8 @@ export async function getTrack(
     title: row.title,
     clipMs: row.clip_ms,
     segCount: row.seg_count,
+    artKey: row.art_key,
+    rewardKey: row.reward_key,
   };
 }
 

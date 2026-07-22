@@ -12,6 +12,7 @@ interface SqliteMasterRow {
 
 interface TableInfoRow {
   name: string;
+  notnull: number;
   dflt_value: string | number | null;
 }
 
@@ -55,5 +56,16 @@ describe('D1 schema', () => {
     const sessionColumns = await env.DB.prepare("PRAGMA table_info('sessions')").all<TableInfoRow>();
     const rankedColumn = sessionColumns.results.find((column) => column.name === 'ranked');
     expect(String(rankedColumn?.dflt_value).replace(/^['"]|['"]$/g, '')).toBe('0');
+  });
+
+  it('adds nullable reward and art keys without defaults', async () => {
+    const trackColumns = await env.DB.prepare("PRAGMA table_info('tracks')").all<TableInfoRow>();
+    const artKeyColumn = trackColumns.results.find((column) => column.name === 'art_key');
+    const rewardKeyColumn = trackColumns.results.find((column) => column.name === 'reward_key');
+
+    expect(artKeyColumn).toEqual(expect.objectContaining({ name: 'art_key', notnull: 0, dflt_value: null }));
+    expect(rewardKeyColumn).toEqual(
+      expect.objectContaining({ name: 'reward_key', notnull: 0, dflt_value: null }),
+    );
   });
 });

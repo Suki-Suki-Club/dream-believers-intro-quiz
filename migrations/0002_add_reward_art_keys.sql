@@ -1,0 +1,2 @@
+ALTER TABLE tracks ADD COLUMN art_key TEXT;
+ALTER TABLE tracks ADD COLUMN reward_key TEXT;
