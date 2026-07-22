@@ -10,6 +10,7 @@ seed.sql
 *.m4a
 *.wav
 tracks.yaml
+.audio/
 
 .omc/
 .superpowers/
