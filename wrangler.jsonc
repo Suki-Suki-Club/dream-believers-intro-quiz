@@ -14,7 +14,7 @@
 	},
 	"routes": [
 		{
-			"pattern": "intro-quiz.sukisuki.club",
+			"pattern": "dream-believers-quiz.sukisuki.club",
 			"custom_domain": true
 		}
 	],
