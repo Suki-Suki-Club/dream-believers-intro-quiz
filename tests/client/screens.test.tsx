@@ -41,6 +41,8 @@ function gameState(overrides: Partial<UseGameResult> = {}): UseGameResult {
     isStarting: false,
     isSubmitting: false,
     error: null,
+    questionPhase: null,
+    revealArtUrl: null,
     start: vi.fn(async () => undefined),
     submitAnswer: vi.fn(async () => null),
     doSkip: vi.fn(async () => true),
@@ -91,6 +93,67 @@ describe('game screens', () => {
 
     expect(onAnswer).toHaveBeenCalledWith(2);
     expect(container.querySelector('.quiz-screen.shake')).toBeInTheDocument();
+  });
+
+  it('shows the announcement overlay and disables choices', () => {
+    render(
+      <QuizScreen
+        elapsedMs={0}
+        onAnswer={vi.fn()}
+        onSkip={vi.fn()}
+        question={{ choices: ['A', 'B', 'C', 'D', 'E', 'F'] }}
+        questionIndex={0}
+        questionPhase="announcing"
+        skipCount={0}
+        wrongCount={0}
+      />,
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('Q01');
+    for (const button of screen.getAllByRole('button', { name: /^[1-6] / })) {
+      expect(button).toBeDisabled();
+    }
+  });
+
+  it('shows the correct reveal overlay with album art', () => {
+    const { container } = render(
+      <QuizScreen
+        elapsedMs={0}
+        onAnswer={vi.fn()}
+        onSkip={vi.fn()}
+        question={{ choices: ['A', 'B', 'C', 'D', 'E', 'F'] }}
+        questionIndex={0}
+        questionPhase="correct-reveal"
+        revealArtUrl="blob:fake"
+        skipCount={0}
+        wrongCount={0}
+      />,
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('正解!');
+    expect(container.querySelector('.correct-reveal-overlay__art')).toHaveAttribute(
+      'src',
+      'blob:fake',
+    );
+  });
+
+  it('shows the correct reveal without an image when art is unavailable', () => {
+    render(
+      <QuizScreen
+        elapsedMs={0}
+        onAnswer={vi.fn()}
+        onSkip={vi.fn()}
+        question={{ choices: ['A', 'B', 'C', 'D', 'E', 'F'] }}
+        questionIndex={0}
+        questionPhase="correct-reveal"
+        revealArtUrl={null}
+        skipCount={0}
+        wrongCount={0}
+      />,
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('正解!');
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
   it('registers the result and shows the returned rank', async () => {

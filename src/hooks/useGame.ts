@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   answer as answerQuestion,
   ApiError,
+  fetchArt,
   fetchSegment as fetchAudioSegment,
+  fetchReward,
   skip as skipQuestion,
   startGame,
 } from '../api/client';
@@ -11,8 +13,20 @@ import {
   createSegmentPlayer,
   type SegmentPlayer,
 } from '../audio/segmentPlayer';
+import { getSharedAudioContext, unlockSharedAudioContext } from '../audio/audioContext';
+import { sfx } from '../audio/sfx';
 
 export type GamePhase = 'start' | 'quiz' | 'result';
+
+export type QuestionPhase =
+  | 'announcing'
+  | 'playing'
+  | 'correct-reveal'
+  | 'wrong-feedback';
+
+export const ANNOUNCE_MS = 1_700;
+export const CORRECT_HOLD_MS = 1_300;
+export const WRONG_FEEDBACK_MS = 650;
 
 export interface GamePenalties {
   wrong: number;
@@ -38,6 +52,8 @@ export interface UseGameResult {
   isStarting: boolean;
   isSubmitting: boolean;
   error: Error | null;
+  questionPhase?: QuestionPhase | null;
+  revealArtUrl?: string | null;
   start: () => Promise<void>;
   submitAnswer: (choice: number) => Promise<AnswerResponse | null>;
   doSkip: () => Promise<boolean>;
@@ -89,6 +105,8 @@ export function useGame(): UseGameResult {
   const [isStarting, setIsStarting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [questionPhase, setQuestionPhase] = useState<QuestionPhase | null>(null);
+  const [revealArtUrl, setRevealArtUrl] = useState<string | null>(null);
 
   const phaseRef = useRef<GamePhase>('start');
   const sessionIdRef = useRef<string | null>(null);
@@ -100,13 +118,115 @@ export function useGame(): UseGameResult {
   const runIdRef = useRef(0);
   const wrongCountRef = useRef(0);
   const skipCountRef = useRef(0);
+  const questionPhaseRef = useRef<QuestionPhase | null>(null);
+  const revealArtUrlRef = useRef<string | null>(null);
+  const announceTimerRef = useRef<number | undefined>(undefined);
+  const holdTimerRef = useRef<number | undefined>(undefined);
+  const wrongTimerRef = useRef<number | undefined>(undefined);
 
   const changePhase = useCallback((nextPhase: GamePhase): void => {
     phaseRef.current = nextPhase;
     setPhase(nextPhase);
   }, []);
 
+  const setQuestionPhaseState = (next: QuestionPhase | null): void => {
+    questionPhaseRef.current = next;
+    setQuestionPhase(next);
+  };
+
+  const clearQuestionTimers = (): void => {
+    if (announceTimerRef.current !== undefined) {
+      window.clearTimeout(announceTimerRef.current);
+      announceTimerRef.current = undefined;
+    }
+    if (holdTimerRef.current !== undefined) {
+      window.clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = undefined;
+    }
+    if (wrongTimerRef.current !== undefined) {
+      window.clearTimeout(wrongTimerRef.current);
+      wrongTimerRef.current = undefined;
+    }
+  };
+
+  const clearRevealArt = (): void => {
+    if (revealArtUrlRef.current) {
+      URL.revokeObjectURL(revealArtUrlRef.current);
+      revealArtUrlRef.current = null;
+    }
+    setRevealArtUrl(null);
+  };
+
+  const beginPlaying = useCallback((questionIndex: number, runId: number): void => {
+    if (runId !== runIdRef.current) return;
+    setQuestionPhaseState('playing');
+    void playersRef.current[questionIndex]?.play();
+  }, []);
+
+  const beginAnnounce = useCallback(
+    (questionIndex: number, runId: number): void => {
+      if (runId !== runIdRef.current) return;
+      clearQuestionTimers();
+      setQuestionPhaseState('announcing');
+      sfx.play('announce');
+      announceTimerRef.current = window.setTimeout(() => {
+        announceTimerRef.current = undefined;
+        beginPlaying(questionIndex, runId);
+      }, ANNOUNCE_MS);
+    },
+    [beginPlaying],
+  );
+
+  const loadReveal = useCallback(
+    async (sid: string, questionIndex: number, runId: number): Promise<void> => {
+      try {
+        const artBlob = await fetchArt(sid, questionIndex).catch(() => null);
+        if (
+          runId !== runIdRef.current ||
+          questionPhaseRef.current !== 'correct-reveal'
+        ) {
+          return;
+        }
+        if (artBlob) {
+          const url = URL.createObjectURL(artBlob);
+          revealArtUrlRef.current = url;
+          setRevealArtUrl(url);
+        }
+      } catch {
+        // Best effort: art failures must not surface to the player.
+      }
+
+      try {
+        const rewardBuffer = await fetchReward(sid, questionIndex).catch(() => null);
+        if (
+          !rewardBuffer ||
+          runId !== runIdRef.current ||
+          questionPhaseRef.current !== 'correct-reveal'
+        ) {
+          return;
+        }
+        const context = getSharedAudioContext();
+        const decoded = await context.decodeAudioData(rewardBuffer.slice(0));
+        if (
+          runId !== runIdRef.current ||
+          questionPhaseRef.current !== 'correct-reveal'
+        ) {
+          return;
+        }
+        const source = context.createBufferSource();
+        source.buffer = decoded;
+        source.connect(context.destination);
+        source.start(0);
+      } catch {
+        // Best effort: reward clips are optional and may not be deployed yet.
+      }
+    },
+    [],
+  );
+
   const start = useCallback(async (): Promise<void> => {
+    unlockSharedAudioContext();
+    void sfx.preload();
     if (startInFlightRef.current || phaseRef.current !== 'start') return;
 
     startInFlightRef.current = true;
@@ -122,6 +242,7 @@ export function useGame(): UseGameResult {
         createSegmentPlayer({
           fetchSegment: (segment) =>
             fetchAudioSegment(response.sessionId, questionIndex, segment),
+          audioContext: getSharedAudioContext(),
         }),
       );
       const nextLoadedSegments = response.questions.map(() => new Set<number>());
@@ -158,6 +279,8 @@ export function useGame(): UseGameResult {
       setWrongCount(0);
       setSkipCount(0);
       setFinalMs(null);
+      clearRevealArt();
+      beginAnnounce(0, runId);
       changePhase('quiz');
     } catch (cause) {
       if (runId === runIdRef.current) {
@@ -169,12 +292,13 @@ export function useGame(): UseGameResult {
         setIsStarting(false);
       }
     }
-  }, [changePhase]);
+  }, [beginAnnounce, changePhase]);
 
   useEffect(() => {
     if (phase !== 'quiz' || startedAt === null) return;
 
     const updateElapsed = (): void => {
+      if (questionPhaseRef.current === 'correct-reveal') return;
       const penaltyMs =
         (wrongCountRef.current + skipCountRef.current) * SEGMENT_LENGTH_MS;
       setElapsedMs(Math.max(0, Date.now() - startedAt + penaltyMs));
@@ -275,21 +399,55 @@ export function useGame(): UseGameResult {
           playersRef.current[questionIndex]?.jumpBy(SEGMENT_LENGTH_MS);
           wrongCountRef.current += 1;
           setWrongCount(wrongCountRef.current);
+          sfx.play('wrong');
+          clearQuestionTimers();
+          setQuestionPhaseState('wrong-feedback');
+          const activeRunId = runIdRef.current;
+          wrongTimerRef.current = window.setTimeout(() => {
+            wrongTimerRef.current = undefined;
+            if (activeRunId !== runIdRef.current) return;
+            setQuestionPhaseState('playing');
+          }, WRONG_FEEDBACK_MS);
           return response;
         }
 
         if (response.finalMs !== undefined) {
-          setFinalMs(response.finalMs);
-          setElapsedMs(response.finalMs);
-          changePhase('result');
+          const activeRunId = runIdRef.current;
+          sfx.play('correct');
+          playersRef.current[questionIndex]?.pause();
+          clearQuestionTimers();
+          setQuestionPhaseState('correct-reveal');
+          void loadReveal(activeSessionId, questionIndex, activeRunId);
+
+          holdTimerRef.current = window.setTimeout(() => {
+            holdTimerRef.current = undefined;
+            if (activeRunId !== runIdRef.current) return;
+            clearRevealArt();
+            setFinalMs(response.finalMs!);
+            setElapsedMs(response.finalMs!);
+            setQuestionPhaseState(null);
+            changePhase('result');
+          }, CORRECT_HOLD_MS);
           return response;
         }
 
-        const nextQuestion = questionIndex + 1;
+        const activeRunId = runIdRef.current;
+        sfx.play('correct');
         playersRef.current[questionIndex]?.pause();
-        currentQuestionRef.current = nextQuestion;
-        setCurrentQuestion(nextQuestion);
-        setPlayer(playersRef.current[nextQuestion] ?? null);
+        clearQuestionTimers();
+        setQuestionPhaseState('correct-reveal');
+        void loadReveal(activeSessionId, questionIndex, activeRunId);
+
+        holdTimerRef.current = window.setTimeout(() => {
+          holdTimerRef.current = undefined;
+          if (activeRunId !== runIdRef.current) return;
+          clearRevealArt();
+          const nextQuestion = questionIndex + 1;
+          currentQuestionRef.current = nextQuestion;
+          setCurrentQuestion(nextQuestion);
+          setPlayer(playersRef.current[nextQuestion] ?? null);
+          beginAnnounce(nextQuestion, activeRunId);
+        }, CORRECT_HOLD_MS);
         return response;
       } catch (cause) {
         const nextError = toError(cause);
@@ -299,7 +457,7 @@ export function useGame(): UseGameResult {
         setIsSubmitting(false);
       }
     },
-    [changePhase],
+    [beginAnnounce, changePhase, loadReveal],
   );
 
   const doSkip = useCallback(async (): Promise<boolean> => {
@@ -323,6 +481,13 @@ export function useGame(): UseGameResult {
     }
   }, []);
 
+  useEffect(() => {
+    return () => {
+      clearQuestionTimers();
+      clearRevealArt();
+    };
+  }, []);
+
   return {
     state: phase,
     phase,
@@ -342,6 +507,8 @@ export function useGame(): UseGameResult {
     isStarting,
     isSubmitting,
     error,
+    questionPhase,
+    revealArtUrl,
     start,
     submitAnswer,
     doSkip,

@@ -36,6 +36,8 @@ export default function App() {
           player={game.player}
           question={game.questions[game.currentQuestion]}
           questionIndex={game.currentQuestion}
+          questionPhase={game.questionPhase ?? null}
+          revealArtUrl={game.revealArtUrl ?? null}
           skipCount={game.skipCount}
           wrongCount={game.wrongCount}
         />

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { AnswerResponse, Question } from '../api/types';
 import type { SegmentPlayer } from '../audio/segmentPlayer';
+import type { QuestionPhase } from '../hooks/useGame';
 import { ChoiceGrid } from '../components/ChoiceGrid';
 import { PlayDial } from '../components/PlayDial';
 import { SeekBar } from '../components/SeekBar';
@@ -17,6 +18,8 @@ export interface QuizScreenProps {
   onSkip: () => Promise<boolean> | void;
   isSubmitting?: boolean;
   error?: Error | null;
+  questionPhase?: QuestionPhase | null;
+  revealArtUrl?: string | null;
 }
 
 function formatTime(milliseconds: number): string {
@@ -39,6 +42,8 @@ export function QuizScreen({
   onSkip,
   isSubmitting = false,
   error = null,
+  questionPhase = null,
+  revealArtUrl = null,
 }: QuizScreenProps) {
   const [feedback, setFeedback] = useState<'wrong' | 'correct' | null>(null);
   const [penaltyPopKey, setPenaltyPopKey] = useState(0);
@@ -139,6 +144,27 @@ export function QuizScreen({
         className={`screen quiz-screen ${feedback === 'wrong' ? 'shake' : ''}`.trim()}
         data-feedback={feedback ?? undefined}
       >
+        {questionPhase === 'announcing' ? (
+          <div aria-live="polite" className="announce-overlay" role="status">
+            <span className="announce-overlay__text">
+              Q{String(questionNumber).padStart(2, '0')}
+            </span>
+          </div>
+        ) : null}
+
+        {questionPhase === 'correct-reveal' ? (
+          <div aria-live="polite" className="correct-reveal-overlay" role="status">
+            <span className="correct-reveal-overlay__text">正解!</span>
+            {revealArtUrl ? (
+              <img
+                alt=""
+                className="correct-reveal-overlay__art"
+                src={revealArtUrl}
+              />
+            ) : null}
+          </div>
+        ) : null}
+
         <PlayDial
           disabled={!player || fetchedMs === 0}
           fetchedMs={fetchedMs}
@@ -162,7 +188,12 @@ export function QuizScreen({
 
         <ChoiceGrid
           choices={choices}
-          disabled={isSubmitting || choices.length === 0}
+          disabled={
+            isSubmitting ||
+            choices.length === 0 ||
+            questionPhase === 'announcing' ||
+            questionPhase === 'correct-reveal'
+          }
           onChoice={(choiceIndex) => void handleAnswer(choiceIndex)}
           wrongFlash={feedback === 'wrong'}
         />

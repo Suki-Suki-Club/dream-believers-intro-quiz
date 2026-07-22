@@ -1,6 +1,8 @@
 import {
   answer,
   ApiError,
+  fetchArt,
+  fetchReward,
   fetchSegment,
   getRanking,
   postRanking,
@@ -52,6 +54,44 @@ describe('API client', () => {
     const request = fetchSegment('session-1', 0, 1);
     await expect(request).rejects.toBeInstanceOf(SegmentUnavailableError);
     await expect(request).rejects.toMatchObject({ status: 403 });
+  });
+
+  it('fetches a reward clip and treats 404 as unavailable', async () => {
+    const buffer = new Uint8Array([4, 5, 6]).buffer;
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      arrayBuffer: vi.fn(async () => buffer),
+    });
+
+    await expect(fetchReward('session 1', 2)).resolves.toBe(buffer);
+    expect(fetchMock).toHaveBeenCalledWith('/api/game/session%201/q/2/reward');
+
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 404 }));
+    await expect(fetchReward('session 1', 2)).resolves.toBeNull();
+  });
+
+  it('fetches album art and treats 404 as unavailable', async () => {
+    const blob = new Blob(['art'], { type: 'image/jpeg' });
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      blob: vi.fn(async () => blob),
+    });
+
+    await expect(fetchArt('session 1', 2)).resolves.toBe(blob);
+    expect(fetchMock).toHaveBeenCalledWith('/api/game/session%201/q/2/art');
+
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 404 }));
+    await expect(fetchArt('session 1', 2)).resolves.toBeNull();
+  });
+
+  it('throws ApiError for unavailable reward and art responses other than 404', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 500 }));
+    await expect(fetchReward('session-1', 0)).rejects.toMatchObject({ status: 500 });
+
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 500 }));
+    await expect(fetchArt('session-1', 0)).rejects.toBeInstanceOf(ApiError);
   });
 
   it('answers with a JSON body and parses the response', async () => {

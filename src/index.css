@@ -361,10 +361,51 @@ input {
 /* ----------------------------------------------------------------- dial */
 
 .quiz-screen {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 1.05rem;
   padding-bottom: 1.2rem;
+}
+
+.announce-overlay,
+.correct-reveal-overlay {
+  position: absolute;
+  z-index: 2;
+  inset: 0.4rem 1.1rem auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 11rem;
+  border: 1px solid rgb(255 134 200 / 28%);
+  border-radius: var(--radius-panel);
+  background: rgb(255 248 251 / 88%);
+  box-shadow: 0 12px 32px rgb(255 134 200 / 18%);
+  backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+
+.announce-overlay__text,
+.correct-reveal-overlay__text {
+  color: var(--c-pink-deep);
+  font-family: var(--font-hud);
+  font-size: clamp(2rem, 12vw, 3.6rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.correct-reveal-overlay {
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.correct-reveal-overlay__art {
+  width: min(42vw, 9rem);
+  height: min(42vw, 9rem);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 6px 20px rgb(61 43 58 / 18%);
 }
 
 .dial {

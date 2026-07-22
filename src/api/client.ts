@@ -71,6 +71,30 @@ export async function fetchSegment(
   return response.arrayBuffer();
 }
 
+export async function fetchReward(
+  sessionId: string,
+  question: number,
+): Promise<ArrayBuffer | null> {
+  const response = await fetch(
+    `${API_BASE}/game/${encodeURIComponent(sessionId)}/q/${question}/reward`,
+  );
+  if (response.status === 404) return null;
+  throwForStatus(response);
+  return response.arrayBuffer();
+}
+
+export async function fetchArt(
+  sessionId: string,
+  question: number,
+): Promise<Blob | null> {
+  const response = await fetch(
+    `${API_BASE}/game/${encodeURIComponent(sessionId)}/q/${question}/art`,
+  );
+  if (response.status === 404) return null;
+  throwForStatus(response);
+  return response.blob();
+}
+
 export function answer(
   sessionId: string,
   question: number,
