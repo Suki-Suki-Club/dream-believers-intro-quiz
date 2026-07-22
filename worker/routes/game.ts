@@ -121,6 +121,80 @@ gameRoutes.get('/api/game/:sid/q/:n/seg/:k', async (c) => {
   });
 });
 
+gameRoutes.get('/api/game/:sid/q/:n/reward', async (c) => {
+  const session = await getSession(c.env.DB, c.req.param('sid'));
+  if (!session) {
+    return c.json({ error: 'Session not found' }, 404);
+  }
+
+  const n = parseNonNegativeInteger(c.req.param('n'));
+  if (n === null) {
+    return c.json({ error: 'Invalid question number' }, 400);
+  }
+
+  const question = session.state.questions[n];
+  if (!question || question.answeredAt === null) {
+    return c.json({ error: 'Reward not available' }, 404);
+  }
+
+  const track = await getTrack(c.env.DB, question.trackId);
+  if (!track || !track.rewardKey) {
+    return c.json({ error: 'Reward not available' }, 404);
+  }
+
+  const object = await c.env.MEDIA.get(track.rewardKey);
+  if (!object) {
+    return c.json({ error: 'Reward not available' }, 404);
+  }
+
+  return new Response(object.body, {
+    status: 200,
+    headers: {
+      'Content-Type': 'audio/mp4',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      Pragma: 'no-cache',
+      Expires: '0',
+    },
+  });
+});
+
+gameRoutes.get('/api/game/:sid/q/:n/art', async (c) => {
+  const session = await getSession(c.env.DB, c.req.param('sid'));
+  if (!session) {
+    return c.json({ error: 'Session not found' }, 404);
+  }
+
+  const n = parseNonNegativeInteger(c.req.param('n'));
+  if (n === null) {
+    return c.json({ error: 'Invalid question number' }, 400);
+  }
+
+  const question = session.state.questions[n];
+  if (!question || question.answeredAt === null) {
+    return c.json({ error: 'Art not available' }, 404);
+  }
+
+  const track = await getTrack(c.env.DB, question.trackId);
+  if (!track || !track.artKey) {
+    return c.json({ error: 'Art not available' }, 404);
+  }
+
+  const object = await c.env.MEDIA.get(track.artKey);
+  if (!object) {
+    return c.json({ error: 'Art not available' }, 404);
+  }
+
+  return new Response(object.body, {
+    status: 200,
+    headers: {
+      'Content-Type': 'image/jpeg',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      Pragma: 'no-cache',
+      Expires: '0',
+    },
+  });
+});
+
 gameRoutes.post('/api/game/:sid/q/:n/answer', async (c) => {
   const session = await getSession(c.env.DB, c.req.param('sid'));
   if (!session) {

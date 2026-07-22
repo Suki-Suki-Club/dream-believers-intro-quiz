@@ -40,3 +40,22 @@ export async function seedGameData(): Promise<void> {
   await env.DB.batch(statements);
   await Promise.all(mediaWrites);
 }
+
+export async function setTrackMedia(
+  trackId: number,
+  media: { artKey?: string | null; rewardKey?: string | null },
+): Promise<void> {
+  await env.DB.prepare(
+    'UPDATE tracks SET art_key = ?1, reward_key = ?2 WHERE id = ?3',
+  )
+    .bind(media.artKey ?? null, media.rewardKey ?? null, trackId)
+    .run();
+
+  if (media.artKey) {
+    await env.MEDIA.put(media.artKey, new Uint8Array([0xff, 0xd8, 0xff]));
+  }
+
+  if (media.rewardKey) {
+    await env.MEDIA.put(media.rewardKey, new Uint8Array([0x00, 0x01, 0x02, 0x03]));
+  }
+}
